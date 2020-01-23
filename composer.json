@@ -26,6 +26,9 @@
     },
     "exclude-from-classmap": [
       "src/Tests/"
+    ],
+    "files": [
+      "src/helpers.php"
     ]
   }
 }
