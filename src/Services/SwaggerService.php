@@ -130,7 +130,7 @@ class SwaggerService
             case 'jwt':
                 return [
                     'type' => 'apiKey',
-                    'name' => 'authorization',
+                    'name' => 'Authorization',
                     'in' => 'header'
                 ];
 
@@ -521,7 +521,7 @@ class SwaggerService
     {
         switch ($this->security) {
             case 'jwt' :
-                $header = $this->request->header('Authorization');
+                $header = $this->request->header('authorization');
                 break;
             case 'laravel' :
                 $header = $this->request->cookie('__ym_uid');
