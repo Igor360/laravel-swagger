@@ -46,7 +46,7 @@ class SwaggerService
         if (config('app.env') == 'testing') {
             $this->container = $container;
 
-            $this->annotationReader = new AnnotationReader(new Parser, new ArrayCache);;
+            $this->annotationReader = new AnnotationReader(new Parser, new ArrayCache);
 
             $this->security = config('auto-doc.security');
 
@@ -521,7 +521,7 @@ class SwaggerService
     {
         switch ($this->security) {
             case 'jwt' :
-                $header = $this->request->header('authorization');
+                $header = $this->request->header('Authorization');
                 break;
             case 'laravel' :
                 $header = $this->request->cookie('__ym_uid');
