@@ -299,7 +299,12 @@ class SwaggerService
         $formRequest->setRouteResolver($this->request->getRouteResolver());
         $rules = method_exists($formRequest, 'rules') ? $formRequest->rules() : [];
 
-        $actionName = $this->getActionName($this->uri);
+        //$actionName = $this->getActionName($this->uri);
+        $actionName = $this->getConcreteRequest();
+        if ($actionName != null){
+            $actionName = last(explode('\\', $actionName));
+            $actionName = str_replace('Request', '', $actionName);
+        }
 
         if (in_array($this->method, ['get', 'delete'])) {
             $this->saveGetRequestParameters($rules, $annotations);
