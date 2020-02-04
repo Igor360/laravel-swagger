@@ -316,7 +316,7 @@ class SwaggerService
     protected function saveGetRequestParameters($rules, AnnotationsBagInterface $annotations)
     {
         foreach ($rules as $parameter => $rule) {
-            $validation = explode('|', $rule);
+            $validation = is_array($rule) ? $rule : explode('|', $rule);
 
             $description = $annotations->get($parameter, implode(', ', $validation));
 
