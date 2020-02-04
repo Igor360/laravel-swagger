@@ -26,17 +26,24 @@ class SwaggerService
     use GetDependenciesTrait;
 
     protected $annotationReader;
+
     protected $dataCollector;
 
     protected $data;
+
     protected $container;
+
     private $uri;
+
     private $method;
+
     /**
      * @var \Illuminate\Http\Request
      */
     private $request;
+
     private $item;
+
     private $security;
 
     public function __construct(Container $container)
@@ -66,7 +73,7 @@ class SwaggerService
 
         if (empty($dataCollectorClass)) {
             $this->dataCollector = app(LocalDataCollector::class);
-        } elseif (!class_exists($dataCollectorClass)) {
+        } elseif (! class_exists($dataCollectorClass)) {
             throw new DataCollectorClassNotFoundException();
         } else {
             $this->dataCollector = app($dataCollectorClass);
@@ -81,16 +88,16 @@ class SwaggerService
             'basePath' => config('auto-doc.basePath'),
             'schemes' => config('auto-doc.schemes'),
             'paths' => [],
-            'definitions' => config('auto-doc.definitions')
+            'definitions' => config('auto-doc.definitions'),
         ];
 
         $info = $this->prepareInfo(config('auto-doc.info'));
-        if (!empty($info)) {
+        if (! empty($info)) {
             $data['info'] = $info;
         }
 
         $securityDefinitions = $this->generateSecurityDefinition();
-        if (!empty($securityDefinitions)) {
+        if (! empty($securityDefinitions)) {
             $data['securityDefinitions'] = $securityDefinitions;
         }
 
@@ -115,12 +122,12 @@ class SwaggerService
             return '';
         }
 
-        if (!in_array($security, $availableTypes)) {
+        if (! in_array($security, $availableTypes)) {
             throw new WrongSecurityConfigException();
         }
 
         return [
-            $security => $this->generateSecurityDefinitionObject($security)
+            $security => $this->generateSecurityDefinitionObject($security),
         ];
     }
 
@@ -131,19 +138,19 @@ class SwaggerService
                 return [
                     'type' => 'apiKey',
                     'name' => 'Authorization',
-                    'in' => 'header'
+                    'in' => 'header',
                 ];
             case 'Bearer':
                 return [
                     'type' => 'apiKey',
                     'name' => 'Authorization',
-                    'in' => 'header'
+                    'in' => 'header',
                 ];
             case 'laravel':
                 return [
                     'type' => 'apiKey',
                     'name' => 'Cookie',
-                    'in' => 'header'
+                    'in' => 'header',
                 ];
         }
     }
@@ -164,16 +171,15 @@ class SwaggerService
     {
         $this->uri = "/{$this->getUri()}";
         $this->method = strtolower($this->request->getMethod());
-
         if (empty(Arr::get($this->data, "paths.{$this->uri}.{$this->method}"))) {
             $this->data['paths'][$this->uri][$this->method] = [
                 'tags' => [],
                 'consumes' => [],
                 'produces' => [],
-                'parameters' => $this->getPathParams(),
+                'parameters' => array_merge($this->getPathParams(), $this->getPathValues()),
                 'responses' => [],
                 'security' => [],
-                'description' => ''
+                'description' => '',
             ];
         }
 
@@ -207,8 +213,29 @@ class SwaggerService
                 'name' => $key,
                 'description' => '',
                 'required' => true,
-                'type' => 'string'
+                'type' => 'string',
             ];
+        }
+
+        return $result;
+    }
+
+    protected function getPathValues()
+    {
+
+        $result = [];
+        if (in_array($this->method, ['get', 'delete'])) {
+            $params = $this->request->toArray();
+            foreach ($params as $key => $param) {
+
+                $result[] = [
+                    'in' => 'query',
+                    'name' => $key,
+                    'description' => sprintf('example : %s', $param),
+                    'required' => false,
+                    'type' => 'string',
+                ];
+            }
         }
 
         return $result;
@@ -243,19 +270,15 @@ class SwaggerService
             $produce = 'text/plain';
         }
 
-        if (!in_array($produce, $produceList)) {
+        if (! in_array($produce, $produceList)) {
             $this->item['produces'][] = $produce;
         }
 
         $responses = $this->item['responses'];
         $code = $response->getStatusCode();
 
-        if (!in_array($code, $responses)) {
-            $this->saveExample(
-                $response->getStatusCode(),
-                $response->getContent(),
-                $produce
-            );
+        if (! in_array($code, $responses)) {
+            $this->saveExample($response->getStatusCode(), $response->getContent(), $produce);
         }
     }
 
@@ -264,7 +287,7 @@ class SwaggerService
         $description = $this->getResponseDescription($code);
         $availableContentTypes = [
             'application',
-            'text'
+            'text',
         ];
         $explodedContentType = explode('/', $produce);
 
@@ -278,7 +301,7 @@ class SwaggerService
     protected function makeResponseExample($content, $mimeType, $description = '')
     {
         $responseExample = [
-            'description' => $description
+            'description' => $description,
         ];
 
         if ($mimeType === 'application/json') {
@@ -301,7 +324,7 @@ class SwaggerService
 
         //$actionName = $this->getActionName($this->uri);
         $actionName = $this->getConcreteRequest();
-        if ($actionName != null){
+        if ($actionName != null) {
             $actionName = last(explode('\\', $actionName));
             $actionName = str_replace('Request', '', $actionName);
         }
@@ -320,16 +343,17 @@ class SwaggerService
 
             $description = $annotations->get($parameter, implode(', ', $validation));
 
-            $existedParameter = Arr::first($this->item['parameters'], function ($existedParameter, $key) use ($parameter) {
-                return $existedParameter['name'] == $parameter;
-            });
+            $existedParameter = Arr::first($this->item['parameters'],
+                function ($existedParameter, $key) use ($parameter) {
+                    return $existedParameter['name'] == $parameter;
+                });
 
             if (empty($existedParameter)) {
                 $parameterDefinition = [
                     'in' => 'query',
                     'name' => $parameter,
                     'description' => $description,
-                    'type' => $this->getParameterType($validation)
+                    'type' => $this->getParameterType($validation),
                 ];
                 if (in_array('required', $validation)) {
                     $parameterDefinition['required'] = true;
@@ -350,8 +374,8 @@ class SwaggerService
                     'description' => '',
                     'required' => true,
                     'schema' => [
-                        "\$ref" => "#/definitions/{$actionName}Object"
-                    ]
+                        "\$ref" => "#/definitions/{$actionName}Object",
+                    ],
                 ];
             }
 
@@ -363,7 +387,7 @@ class SwaggerService
     {
         $data = [
             'type' => 'object',
-            'properties' => []
+            'properties' => [],
         ];
         foreach ($rules as $parameter => $rule) {
             $rulesArray = is_array($rule) ? $rule : explode('|', $rule);
@@ -390,7 +414,7 @@ class SwaggerService
             'email' => 'string',
             'integer' => 'integer',
             'numeric' => 'double',
-            'string' => 'string'
+            'string' => 'string',
         ];
 
         $parameterType = 'string';
@@ -412,8 +436,12 @@ class SwaggerService
         ];
     }
 
-    protected function saveParameterDescription(&$data, $parameter, array $rulesArray, AnnotationsBagInterface $annotations)
-    {
+    protected function saveParameterDescription(
+        &$data,
+        $parameter,
+        array $rulesArray,
+        AnnotationsBagInterface $annotations
+    ) {
         $description = $annotations->get($parameter, implode(', ', $rulesArray));
         $data['properties'][$parameter]['description'] = $description;
     }
@@ -458,9 +486,7 @@ class SwaggerService
         $instance = app($class);
         $route = $this->request->route();
 
-        $parameters = $this->resolveClassMethodDependencies(
-            $route->parametersWithoutNulls(), $instance, $method
-        );
+        $parameters = $this->resolveClassMethodDependencies($route->parametersWithoutNulls(), $instance, $method);
 
         return Arr::first($parameters, function ($key, $parameter) {
             return preg_match('/Request/', $key);
@@ -472,7 +498,7 @@ class SwaggerService
         $consumeList = $this->data['paths'][$this->uri][$this->method]['consumes'];
         $consume = $this->request->header('Content-Type');
 
-        if (!empty($consume) && !in_array($consume, $consumeList)) {
+        if (! empty($consume) && ! in_array($consume, $consumeList)) {
             $this->item['consumes'][] = $consume;
         }
     }
@@ -494,7 +520,7 @@ class SwaggerService
 
         $description = $annotations->get('description');
 
-        if (!empty($description)) {
+        if (! empty($description)) {
             $this->item['description'] = $description;
         }
     }
@@ -511,7 +537,7 @@ class SwaggerService
         $security = &$this->data['paths'][$this->uri][$this->method]['security'];
         if (empty($security)) {
             $security[] = [
-                "{$this->security}" => []
+                "{$this->security}" => [],
             ];
         }
     }
@@ -538,8 +564,7 @@ class SwaggerService
                 break;
         }
 
-        return !empty($header);
-
+        return ! empty($header);
     }
 
     protected function parseRequestName($request)
@@ -556,20 +581,15 @@ class SwaggerService
     {
         $request = $this->getConcreteRequest();
 
-        return elseChain(
-            function () use ($request, $code) {
-                return empty($request) ? Response::$statusTexts[$code] : null;
-            },
-            function () use ($request, $code) {
-                return $this->annotationReader->getClassAnnotations($request)->get("_{$code}");
-            },
-            function () use ($code) {
-                return config("auto-doc.defaults.code-descriptions.{$code}");
-            },
-            function () use ($code) {
-                return Response::$statusTexts[$code];
-            }
-        );
+        return elseChain(function () use ($request, $code) {
+            return empty($request) ? Response::$statusTexts[$code] : null;
+        }, function () use ($request, $code) {
+            return $this->annotationReader->getClassAnnotations($request)->get("_{$code}");
+        }, function () use ($code) {
+            return config("auto-doc.defaults.code-descriptions.{$code}");
+        }, function () use ($code) {
+            return Response::$statusTexts[$code];
+        });
     }
 
     protected function getActionName($uri)
@@ -606,6 +626,7 @@ class SwaggerService
         foreach ($ret as &$match) {
             $match = $match == strtoupper($match) ? strtolower($match) : lcfirst($match);
         }
+
         return implode('_', $ret);
     }
 
@@ -668,7 +689,7 @@ class SwaggerService
             'date' => "0000-00-00",
             'integer' => 0,
             'string' => '',
-            'double' => 0
+            'double' => 0,
         ];
 
         return $values[$type];
@@ -698,12 +719,9 @@ class SwaggerService
 
     protected function throwTraitMissingException()
     {
-        $message = "ERROR:\n" .
-            "It looks like you did not add AutoDocRequestTrait to your requester. \n" .
-            "Please add it or mark in the test that you do not want to collect the \n" .
-            "documentation for this case using the skipDocumentationCollecting() method\n";
+        $message = "ERROR:\n" . "It looks like you did not add AutoDocRequestTrait to your requester. \n" . "Please add it or mark in the test that you do not want to collect the \n" . "documentation for this case using the skipDocumentationCollecting() method\n";
 
-        fwrite(STDERR, print_r($message, TRUE));
+        fwrite(STDERR, print_r($message, true));
 
         die;
     }
