@@ -6,6 +6,8 @@ use Illuminate\Container\Container;
 use Illuminate\Http\Request;
 use Illuminate\Support\Arr;
 use Illuminate\Support\Str;
+use Illuminate\Validation\Rule;
+use Illuminate\Validation\Rules\In;
 use Minime\Annotations\Interfaces\AnnotationsBagInterface;
 use Minime\Annotations\Reader as AnnotationReader;
 use Minime\Annotations\Parser;
@@ -336,10 +338,21 @@ class SwaggerService
         }
     }
 
+    private function chechValidationRules(array &$validations)
+    {
+        foreach ($validations as $index => $validation) {
+            if (is_object($validation) && ! ($validation instanceof In)) {
+                array_splice($validations, $index, 1);
+            }
+        }
+    }
+
     protected function saveGetRequestParameters($rules, AnnotationsBagInterface $annotations)
     {
         foreach ($rules as $parameter => $rule) {
             $validation = is_array($rule) ? $rule : explode('|', $rule);
+
+            $this->chechValidationRules($validation);
 
             $description = $annotations->get($parameter, implode(', ', $validation));
 
