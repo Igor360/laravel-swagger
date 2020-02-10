@@ -19,6 +19,7 @@ use RonasIT\Support\AutoDoc\Exceptions\DataCollectorClassNotFoundException;
 use RonasIT\Support\AutoDoc\DataCollectors\LocalDataCollector;
 use Symfony\Component\HttpFoundation\Response;
 use Illuminate\Http\Testing\File;
+use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
 
 /**
  * @property DataCollectorInterface $dataCollector
@@ -190,7 +191,11 @@ class SwaggerService
 
     protected function getUri()
     {
-        $uri = $this->request->route()->uri();
+        if (empty($this->request->route())) {
+            $uri = str_replace($this->request->root(), '', $this->request->url());
+        } else {
+            $uri = $this->request->route()->uri();
+        }
         $basePath = preg_replace("/^\//", '', config('auto-doc.basePath'));
         $preparedUri = preg_replace("/^{$basePath}/", '', $uri);
 
@@ -486,6 +491,10 @@ class SwaggerService
 
     public function getConcreteRequest()
     {
+
+        if (empty($this->request->route())){
+            throw new NotFoundHttpException();
+        }
         $controller = $this->request->route()->getActionName();
 
         if ($controller == 'Closure') {
