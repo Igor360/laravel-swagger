@@ -404,6 +404,7 @@ class SwaggerService
         ];
         foreach ($rules as $parameter => $rule) {
             $rulesArray = is_array($rule) ? $rule : explode('|', $rule);
+            $this->chechValidationRules($rulesArray);
             $parameterType = $this->getParameterType($rulesArray);
             $this->saveParameterType($data, $parameter, $parameterType);
             $this->saveParameterDescription($data, $parameter, $rulesArray, $annotations);
