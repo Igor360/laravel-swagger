@@ -340,7 +340,7 @@ class SwaggerService
 
     private function chechValidationRules(array &$validations)
     {
-        foreach ($validations as $index => $validation) {
+        foreach ($validations as $index => &$validation) {
             if (is_object($validation) && ! ($validation instanceof In)) {
                 array_splice($validations, $index, 1);
             }
