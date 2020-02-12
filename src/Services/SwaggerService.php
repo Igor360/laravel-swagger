@@ -334,6 +334,7 @@ class SwaggerService
         if ($actionName != null) {
             $actionName = last(explode('\\', $actionName));
             $actionName = str_replace('Request', '', $actionName);
+            $actionName = sprintf('Route: %s, Model : %s', str_replace('/', '\\', $this->getUri()), $actionName);
         }
 
         if (in_array($this->method, ['get', 'delete'])) {
@@ -640,6 +641,7 @@ class SwaggerService
         $data = $this->dataCollector->getDocumentation();
 
         return $data;
+
     }
 
     private function camelCaseToUnderScore($input)
