@@ -18,7 +18,7 @@ function elseChain(...$callbacks)
     foreach ($callbacks as $callback) {
         $value = $callback();
 
-        if (! empty($value)) {
+        if (!empty($value)) {
             return $value;
         }
     }
@@ -88,7 +88,7 @@ function array_get_list($array, $path)
         $values = array_map(function ($item) use ($path) {
             $value = array_get_list($item, $path);
 
-            if (! is_array($value) || is_associative($value)) {
+            if (!is_array($value) || is_associative($value)) {
                 return [$value];
             }
 
@@ -134,7 +134,7 @@ function mkdir_recursively($path)
             $currentPath .= $dir;
         }
 
-        if (! file_exists($currentPath)) {
+        if (!file_exists($currentPath)) {
             mkdir($currentPath);
         }
     });
@@ -178,13 +178,12 @@ function array_subtraction($array1, $array2)
  */
 function getGUID()
 {
-    mt_srand((double)microtime() * 10000);//optional for php 4.2.0 and up.
+    mt_srand((double) microtime() * 10000);//optional for php 4.2.0 and up.
     $charId = strtoupper(md5(uniqid(rand(), true)));
     $hyphen = chr(45);// "-"
 
     return chr(123)// "{"
-        . substr($charId, 0, 8) . $hyphen . substr($charId, 8, 4) . $hyphen . substr($charId, 12,
-            4) . $hyphen . substr($charId, 16, 4) . $hyphen . substr($charId, 20, 12) . chr(125);// "}"
+        . substr($charId, 0, 8) . $hyphen . substr($charId, 8, 4) . $hyphen . substr($charId, 12, 4) . $hyphen . substr($charId, 16, 4) . $hyphen . substr($charId, 20, 12) . chr(125);// "}"
 }
 
 function array_concat($array, $callback)
@@ -255,7 +254,7 @@ function array_associate($array, $callback)
     foreach ($array as $key => $value) {
         $callbackResult = $callback($value, $key);
 
-        if (! empty($callbackResult)) {
+        if (!empty($callbackResult)) {
             $result[$callbackResult['key']] = $callbackResult['value'];
         }
     }
@@ -302,17 +301,17 @@ function array_unique_objects($objectsList, $filter = 'id')
     }, $objectsList);
 
     return array_filter($uniqueObjects, function ($item) {
-        return ! is_null($item);
+        return !is_null($item);
     });
 }
 
 /**
- * @deprecated
- *
  * @param array $objectsList
  * @param string|callable|array $filter
  *
  * @return array
+ * @deprecated
+ *
  */
 function array_unique_object($objectsList, $filter = 'id')
 {
@@ -371,4 +370,77 @@ function array_undot($array)
     }
 
     return $result;
+}
+
+function mime_type(string $filename)
+{
+
+    $mime_types = [
+
+        'txt' => 'text/plain',
+        'htm' => 'text/html',
+        'html' => 'text/html',
+        'php' => 'text/html',
+        'css' => 'text/css',
+        'js' => 'application/javascript',
+        'json' => 'application/json',
+        'xml' => 'application/xml',
+        'swf' => 'application/x-shockwave-flash',
+        'flv' => 'video/x-flv',
+
+        // images
+        'png' => 'image/png',
+        'jpe' => 'image/jpeg',
+        'jpeg' => 'image/jpeg',
+        'jpg' => 'image/jpeg',
+        'gif' => 'image/gif',
+        'bmp' => 'image/bmp',
+        'ico' => 'image/vnd.microsoft.icon',
+        'tiff' => 'image/tiff',
+        'tif' => 'image/tiff',
+        'svg' => 'image/svg+xml',
+        'svgz' => 'image/svg+xml',
+
+        // archives
+        'zip' => 'application/zip',
+        'rar' => 'application/x-rar-compressed',
+        'exe' => 'application/x-msdownload',
+        'msi' => 'application/x-msdownload',
+        'cab' => 'application/vnd.ms-cab-compressed',
+
+        // audio/video
+        'mp3' => 'audio/mpeg',
+        'qt' => 'video/quicktime',
+        'mov' => 'video/quicktime',
+
+        // adobe
+        'pdf' => 'application/pdf',
+        'psd' => 'image/vnd.adobe.photoshop',
+        'ai' => 'application/postscript',
+        'eps' => 'application/postscript',
+        'ps' => 'application/postscript',
+
+        // ms office
+        'doc' => 'application/msword',
+        'rtf' => 'application/rtf',
+        'xls' => 'application/vnd.ms-excel',
+        'ppt' => 'application/vnd.ms-powerpoint',
+
+        // open office
+        'odt' => 'application/vnd.oasis.opendocument.text',
+        'ods' => 'application/vnd.oasis.opendocument.spreadsheet',
+    ];
+    $type = explode('.', $filename);
+    $ext = strtolower(array_pop($type));
+    if (array_key_exists($ext, $mime_types)) {
+        return $mime_types[$ext];
+    } elseif (function_exists('finfo_open')) {
+        $finfo = finfo_open(FILEINFO_MIME);
+        $mimetype = finfo_file($finfo, $filename);
+        finfo_close($finfo);
+
+        return $mimetype;
+    } else {
+        return 'application/octet-stream';
+    }
 }

@@ -2,6 +2,7 @@
 
 namespace RonasIT\Support\AutoDoc\Http\Controllers;
 
+use Illuminate\Http\Response;
 use Illuminate\Routing\Controller as BaseController;
 use RonasIT\Support\AutoDoc\Services\SwaggerService;
 use Symfony\Component\HttpKernel\Exception\NotFoundHttpException;
@@ -37,6 +38,6 @@ class AutoDocController extends BaseController
 
         $content = file_get_contents($filePath);
 
-        return response($content);
+        return response($content, Response::HTTP_OK, ['Content-Type' => mime_type($filePath)]);
     }
 }

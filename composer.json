@@ -19,7 +19,8 @@
     "php": ">=7.1.0",
     "laravel/framework": ">=5.8.0",
     "minime/annotations": "3.0",
-    "ext-json": "*"
+    "ext-json": "*",
+    "ext-fileinfo": "*"
   },
   "autoload": {
     "psr-4": {
