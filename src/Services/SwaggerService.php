@@ -12,6 +12,7 @@ use Minime\Annotations\Interfaces\AnnotationsBagInterface;
 use Minime\Annotations\Reader as AnnotationReader;
 use Minime\Annotations\Parser;
 use Minime\Annotations\Cache\ArrayCache;
+use mysql_xdevapi\Exception;
 use RonasIT\Support\AutoDoc\Interfaces\DataCollectorInterface;
 use RonasIT\Support\AutoDoc\Traits\GetDependenciesTrait;
 use RonasIT\Support\AutoDoc\Exceptions\WrongSecurityConfigException;
@@ -76,7 +77,7 @@ class SwaggerService
 
         if (empty($dataCollectorClass)) {
             $this->dataCollector = app(LocalDataCollector::class);
-        } elseif (! class_exists($dataCollectorClass)) {
+        } elseif (!class_exists($dataCollectorClass)) {
             throw new DataCollectorClassNotFoundException();
         } else {
             $this->dataCollector = app($dataCollectorClass);
@@ -95,16 +96,20 @@ class SwaggerService
         ];
 
         $info = $this->prepareInfo(config('auto-doc.info'));
-        if (! empty($info)) {
+        if (!empty($info)) {
             $data['info'] = $info;
         }
 
         $securityDefinitions = $this->generateSecurityDefinition();
-        if (! empty($securityDefinitions)) {
+        if (!empty($securityDefinitions)) {
             $data['securityDefinitions'] = $securityDefinitions;
         }
 
-        $data['info']['description'] = view($data['info']['description'])->render();
+        try {
+            $data['info']['description'] = view($data['info']['description'])->render();
+        } catch (\Exception $e) {
+            logger($e->getMessage());
+        }
 
         return $data;
     }
@@ -125,7 +130,7 @@ class SwaggerService
             return '';
         }
 
-        if (! in_array($security, $availableTypes)) {
+        if (!in_array($security, $availableTypes)) {
             throw new WrongSecurityConfigException();
         }
 
@@ -277,14 +282,14 @@ class SwaggerService
             $produce = 'text/plain';
         }
 
-        if (! in_array($produce, $produceList)) {
+        if (!in_array($produce, $produceList)) {
             $this->item['produces'][] = $produce;
         }
 
         $responses = $this->item['responses'];
         $code = $response->getStatusCode();
 
-        if (! in_array($code, $responses)) {
+        if (!in_array($code, $responses)) {
             $this->saveExample($response->getStatusCode(), $response->getContent(), $produce);
         }
     }
@@ -347,7 +352,7 @@ class SwaggerService
     private function chechValidationRules(array &$validations)
     {
         foreach ($validations as $index => &$validation) {
-            if (is_object($validation) && ! ($validation instanceof In)) {
+            if (is_object($validation) && !($validation instanceof In)) {
                 array_splice($validations, $index, 1);
             }
         }
@@ -493,7 +498,7 @@ class SwaggerService
     public function getConcreteRequest()
     {
 
-        if (empty($this->request->route())){
+        if (empty($this->request->route())) {
             throw new NotFoundHttpException();
         }
         $controller = $this->request->route()->getActionName();
@@ -522,7 +527,7 @@ class SwaggerService
         $consumeList = $this->data['paths'][$this->uri][$this->method]['consumes'];
         $consume = $this->request->header('Content-Type');
 
-        if (! empty($consume) && ! in_array($consume, $consumeList)) {
+        if (!empty($consume) && !in_array($consume, $consumeList)) {
             $this->item['consumes'][] = $consume;
         }
     }
@@ -544,7 +549,7 @@ class SwaggerService
 
         $description = $annotations->get('description');
 
-        if (! empty($description)) {
+        if (!empty($description)) {
             $this->item['description'] = $description;
         }
     }
@@ -588,7 +593,7 @@ class SwaggerService
                 break;
         }
 
-        return ! empty($header);
+        return !empty($header);
     }
 
     protected function parseRequestName($request)
@@ -641,7 +646,6 @@ class SwaggerService
         $data = $this->dataCollector->getDocumentation();
 
         return $data;
-
     }
 
     private function camelCaseToUnderScore($input)
@@ -744,7 +748,9 @@ class SwaggerService
 
     protected function throwTraitMissingException()
     {
-        $message = "ERROR:\n" . "It looks like you did not add AutoDocRequestTrait to your requester. \n" . "Please add it or mark in the test that you do not want to collect the \n" . "documentation for this case using the skipDocumentationCollecting() method\n";
+        $message = "ERROR:\n" . "It looks like you did not add AutoDocRequestTrait to your requester. \n"
+                   . "Please add it or mark in the test that you do not want to collect the \n"
+                   . "documentation for this case using the skipDocumentationCollecting() method\n";
 
         fwrite(STDERR, print_r($message, true));
 
